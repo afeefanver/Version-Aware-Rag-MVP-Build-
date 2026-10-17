@@ -33,20 +33,20 @@ def check_virtual_environment():
 def check_dependencies():
     """Check if required dependencies are installed."""
     required_packages = [
-        'sentence-transformers',
-        'qdrant-client',
-        'python-frontmatter',
-        'numpy'
+        ('sentence-transformers', 'sentence_transformers'),
+        ('qdrant-client', 'qdrant_client'),
+        ('python-frontmatter', 'frontmatter'),  # Special case: package name != import name
+        ('numpy', 'numpy')
     ]
 
     missing = []
-    for package in required_packages:
+    for package_name, import_name in required_packages:
         try:
-            __import__(package.replace('-', '_'))
-            print(f"PASS: {package}")
+            __import__(import_name)
+            print(f"PASS: {package_name}")
         except ImportError:
-            print(f"FAIL: {package} (not installed)")
-            missing.append(package)
+            print(f"FAIL: {package_name} (not installed)")
+            missing.append(package_name)
 
     return len(missing) == 0
 

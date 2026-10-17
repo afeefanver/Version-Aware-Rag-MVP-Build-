@@ -406,7 +406,7 @@ def publish_version(
 # Example usage and testing
 if __name__ == "__main__":
     # Test with the manifest if it exists
-    manifest_path = Path("../data/manifest.json")
+    manifest_path = Path("./data/manifest.json")
     if manifest_path.exists():
         print("Testing IngestionPipeline...")
 
