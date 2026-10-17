@@ -28,7 +28,7 @@ except ImportError:
 @dataclass
 class EmbeddedChunk:
     """Represents a chunk with its embedding and metadata."""
-    id: str
+    id: str  # This is the Qdrant point ID (UUID)
     text: str
     embedding: List[float]
     metadata: Dict[str, Any]
@@ -42,6 +42,7 @@ class Embedder:
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         qdrant_host: str = "localhost",
         qdrant_port: int = 6333,
+        qdrant_path: Optional[str] = None,
         collection_name: str = "version_aware_rag"
     ):
         """
@@ -49,8 +50,9 @@ class Embedder:
 
         Args:
             model_name: Sentence transformers model to use
-            qdrant_host: Qdrant server host
-            qdrant_port: Qdrant server port
+            qdrant_host: Qdrant server host (ignored if qdrant_path is provided)
+            qdrant_port: Qdrant server port (ignored if qdrant_path is provided)
+            qdrant_path: Path to local Qdrant storage (if None, uses server mode)
             collection_name: Name of the Qdrant collection
         """
         self.model_name = model_name
@@ -70,11 +72,18 @@ class Embedder:
         # Initialize Qdrant client
         if QDRANT_AVAILABLE:
             try:
-                self.client = QdrantClient(host=qdrant_host, port=qdrant_port)
-                self._ensure_collection_exists()
-                print(f"Connected to Qdrant at {qdrant_host}:{qdrant_port}")
+                if qdrant_path:
+                    # Use local storage mode
+                    self.client = QdrantClient(path=qdrant_path)
+                    print(f"Using Qdrant local storage at: {qdrant_path}")
+                    self._ensure_collection_exists()  # Ensure collection exists for local storage too
+                else:
+                    # Use server mode
+                    self.client = QdrantClient(host=qdrant_host, port=qdrant_port)
+                    self._ensure_collection_exists()
+                    print(f"Connected to Qdrant at {qdrant_host}:{qdrant_port}")
             except Exception as e:
-                print(f"Warning: Could not connect to Qdrant: {e}")
+                print(f"Warning: Could not initialize Qdrant: {e}")
                 print("Vector storage will not work until Qdrant is available")
                 self.client = None
         else:
@@ -136,13 +145,13 @@ class Embedder:
             chunks: List of chunk dictionaries with 'text' and metadata
 
         Returns:
-            List of EmbeddedChunk objects
+            List of EmbeddedChunk objects with UUID point IDs
         """
         embedded_chunks = []
 
         for chunk in chunks:
-            # Generate unique ID if not present
-            chunk_id = chunk.get('id', str(uuid.uuid4()))
+            # Generate UUID for Qdrant point ID (regardless of chunk's internal ID)
+            point_id = str(uuid.uuid4())
 
             # Get text to embed
             text = chunk['text']
@@ -150,12 +159,17 @@ class Embedder:
             # Generate embedding
             embedding = self.embed_text(text)
 
+            # Preserve the original chunk ID in metadata for reference
+            metadata = chunk.get('metadata', {}).copy()
+            if 'chunk_id' not in metadata:
+                metadata['chunk_id'] = chunk.get('id', 'unknown')
+
             # Create embedded chunk
             embedded_chunk = EmbeddedChunk(
-                id=chunk_id,
+                id=point_id,  # UUID for Qdrant
                 text=text,
                 embedding=embedding,
-                metadata=chunk.get('metadata', {})
+                metadata=metadata
             )
 
             embedded_chunks.append(embedded_chunk)
@@ -185,7 +199,7 @@ class Embedder:
             points = []
             for embedded_chunk in embedded_chunks:
                 point = models.PointStruct(
-                    id=embedded_chunk.id,
+                    id=embedded_chunk.id,  # This is now a UUID
                     vector=embedded_chunk.embedding,
                     payload={
                         'text': embedded_chunk.text,
@@ -232,17 +246,17 @@ class Embedder:
         query_embedding = self.embed_text(query_text)
 
         try:
-            # Search in Qdrant
-            search_result = self.client.search(
+            # Search in Qdrant using query_points (for qdrant-client >= 1.0.0)
+            search_result = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query=query_embedding,
                 limit=limit,
                 score_threshold=score_threshold
             )
 
             # Format results
             results = []
-            for scored_point in search_result:
+            for scored_point in search_result.points:
                 result = {
                     'id': scored_point.id,
                     'text': scored_point.payload.get('text', ''),
@@ -344,8 +358,8 @@ def chunks_have_changed(old_chunks: List[Dict], new_chunks: List[Dict]) -> bool:
         old_chunks: Previous version of chunks
         new_chunks: New version of chunks
 
-        Returns:
-            True if chunks have changed, False otherwise
+    Returns:
+        True if chunks have changed, False otherwise
     """
     if len(old_chunks) != len(new_chunks):
         return True
@@ -376,6 +390,7 @@ if __name__ == "__main__":
     embedder = Embedder(
         qdrant_host="localhost",
         qdrant_port=6333,
+        qdrant_path="./qdrant_local_storage",  # Use local storage
         collection_name="test_collection"
     )
 

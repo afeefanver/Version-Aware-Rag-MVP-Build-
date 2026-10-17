@@ -40,6 +40,7 @@ class VersionAwareRetriever:
         collection_name: str = "version_aware_rag",
         qdrant_host: str = "localhost",
         qdrant_port: int = 6333,
+        qdrant_path: Optional[str] = None,
         embedder: Optional[Embedder] = None
     ):
         """
@@ -47,25 +48,33 @@ class VersionAwareRetriever:
 
         Args:
             collection_name: Name of the Qdrant collection
-            qdrant_host: Qdrant server host
-            qdrant_port: Qdrant port
+            qdrant_host: Qdrant server host (ignored if qdrant_path is provided)
+            qdrant_port: Qdrant port (ignored if qdrant_path is provided)
+            qdrant_path: Path to local Qdrant storage (if None, uses server mode)
             embedder: Embedder instance (if None, creates default)
         """
         self.collection_name = collection_name
 
         if QDRANT_AVAILABLE:
             try:
-                self.client = QdrantClient(host=qdrant_host, port=qdrant_port)
-                # Test connection
-                self.client.get_collection(collection_name)
-                logger.info(f"Connected to Qdrant collection: {collection_name}")
+                if qdrant_path:
+                    # Use local storage mode
+                    self.client = QdrantClient(path=qdrant_path)
+                    logger.info(f"Using Qdrant local storage at: {qdrant_path}")
+                else:
+                    # Use server mode
+                    self.client = QdrantClient(host=qdrant_host, port=qdrant_port)
+                    # Test connection
+                    self.client.get_collection(collection_name)
+                    logger.info(f"Connected to Qdrant collection: {collection_name}")
             except Exception as e:
-                logger.warning(f"Could not connect to Qdrant: {e}")
+                logger.warning(f"Could not initialize Qdrant: {e}")
                 self.client = None
         else:
             self.client = None
 
-        self.embedder = embedder or Embedder()
+        # Pass qdrant_path to embedder as well
+        self.embedder = embedder or Embedder(qdrant_path=qdrant_path)
 
     def search(
         self,
@@ -115,9 +124,10 @@ class VersionAwareRetriever:
 
         # Perform search
         try:
-            search_result = self.client.search(
+            # Search in Qdrant using query_points (for qdrant-client >= 1.0.0)
+            search_result = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query=query_embedding,
                 limit=limit,
                 score_threshold=score_threshold,
                 query_filter=models.Filter(**qdrant_filter) if qdrant_filter else None
@@ -125,7 +135,7 @@ class VersionAwareRetriever:
 
             # Format results
             results = []
-            for scored_point in search_result:
+            for scored_point in search_result.points:
                 result = {
                     'id': scored_point.id,
                     'text': scored_point.payload.get('text', ''),
@@ -182,15 +192,15 @@ class VersionAwareRetriever:
 
         # Search for version A
         try:
-            search_result_a = self.client.search(
+            search_result_a = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query=query_embedding,
                 limit=limit,
                 score_threshold=score_threshold,
                 query_filter=models.Filter(**filter_a) if filter_a else None
             )
 
-            for scored_point in search_result_a:
+            for scored_point in search_result_a.points:
                 result = {
                     'id': scored_point.id,
                     'text': scored_point.payload.get('text', ''),
@@ -207,15 +217,15 @@ class VersionAwareRetriever:
 
         # Search for version B
         try:
-            search_result_b = self.client.search(
+            search_result_b = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query=query_embedding,
                 limit=limit,
                 score_threshold=score_threshold,
                 query_filter=models.Filter(**filter_b) if filter_b else None
             )
 
-            for scored_point in search_result_b:
+            for scored_point in search_result_b.points:
                 result = {
                     'id': scored_point.id,
                     'text': scored_point.payload.get('text', ''),
@@ -357,6 +367,7 @@ def search_documents(
     collection_name: str = "version_aware_rag",
     qdrant_host: str = "localhost",
     qdrant_port: int = 6333,
+    qdrant_path: Optional[str] = None,
     limit: int = 10,
     score_threshold: float = 0.7,
     query_mode: Optional[str] = None,
@@ -369,8 +380,9 @@ def search_documents(
     Args:
         query_text: Text to search for
         collection_name: Name of the Qdrant collection
-        qdrant_host: Qdrant server host
-        qdrant_port: Qdrant port
+        qdrant_host: Qdrant server host (ignored if qdrant_path is provided)
+        qdrant_port: Qdrant port (ignored if qdrant_path is provided)
+        qdrant_path: Path to local Qdrant storage (if None, uses server mode)
         limit: Maximum number of results
         score_threshold: Minimum similarity score
         query_mode: Mode of query ('default', 'as_of', 'explicit_version', 'compare', None for auto-detect)
@@ -383,7 +395,8 @@ def search_documents(
     retriever = VersionAwareRetriever(
         collection_name=collection_name,
         qdrant_host=qdrant_host,
-        qdrant_port=qdrant_port
+        qdrant_port=qdrant_port,
+        qdrant_path=qdrant_path
     )
 
     return retriever.search(

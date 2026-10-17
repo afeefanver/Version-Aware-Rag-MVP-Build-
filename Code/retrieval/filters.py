@@ -55,7 +55,7 @@ def build_as_of_filter(target_date: str) -> Dict[str, Any]:
             },
             {
                 "key": "effective_to",
-                "match": {"value": None}
+                "is_null": True
             }
         ]
     }

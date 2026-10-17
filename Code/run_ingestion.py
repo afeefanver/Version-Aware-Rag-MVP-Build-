@@ -19,10 +19,15 @@ def main():
         return 1
 
     print(f"Using manifest: {manifest_path}")
+    print("Using Qdrant local storage: ./qdrant_local_storage")
 
     try:
         # Run ingestion for all documents
-        results = ingest_all_documents(manifest_path, force_reingest=False)
+        results = ingest_all_documents(
+            manifest_path,
+            force_reingest=False,
+            qdrant_path="./qdrant_local_storage"
+        )
 
         print("\nIngestion Results:")
         print(f"Total documents: {results['total_documents']}")

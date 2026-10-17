@@ -26,20 +26,22 @@ class IngestionPipeline:
         self,
         manifest_path: Path,
         embedder: Optional[Embedder] = None,
-        data_root: Optional[Path] = None
+        data_root: Optional[Path] = None,
+        qdrant_path: Optional[str] = None
     ):
         """
         Initialize the ingestion pipeline.
 
         Args:
             manifest_path: Path to manifest.json file
-            embedder: Embedder instance (if None, creates default)
+            embedder: Embedder instance (if None, creates default with qdrant_path)
             data_root: Root directory for data files (if None, uses manifest parent)
+            qdrant_path: Path to local Qdrant storage (if None, uses default localhost:6333)
         """
         self.manifest_path = manifest_path
         self.data_root = data_root or manifest_path.parent
         self.registry = VersionRegistry(manifest_path)
-        self.embedder = embedder or Embedder()
+        self.embedder = embedder or Embedder(qdrant_path=qdrant_path)
 
         logger.info(f"IngestionPipeline initialized with manifest: {manifest_path}")
 
@@ -343,7 +345,8 @@ def ingest_document(
     manifest_path: Path,
     doc_id: str,
     version: str,
-    embedder: Optional[Embedder] = None
+    embedder: Optional[Embedder] = None,
+    qdrant_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Convenience function to ingest a single document version.
@@ -353,18 +356,20 @@ def ingest_document(
         doc_id: Document identifier
         version: Version string
         embedder: Embedder instance (optional)
+        qdrant_path: Path to local Qdrant storage (optional)
 
     Returns:
         Ingestion result dictionary
     """
-    pipeline = IngestionPipeline(manifest_path, embedder=embedder)
+    pipeline = IngestionPipeline(manifest_path, embedder=embedder, qdrant_path=qdrant_path)
     return pipeline.ingest_document(doc_id, version)
 
 
 def ingest_all_documents(
     manifest_path: Path,
     embedder: Optional[Embedder] = None,
-    force_reingest: bool = False
+    force_reingest: bool = False,
+    qdrant_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Convenience function to ingest all documents from manifest.
@@ -373,11 +378,12 @@ def ingest_all_documents(
         manifest_path: Path to manifest.json
         embedder: Embedder instance (optional)
         force_reingest: If True, re-ingest all documents
+        qdrant_path: Path to local Qdrant storage (optional)
 
     Returns:
         Ingestion summary dictionary
     """
-    pipeline = IngestionPipeline(manifest_path, embedder=embedder)
+    pipeline = IngestionPipeline(manifest_path, embedder=embedder, qdrant_path=qdrant_path)
     return pipeline.ingest_all_documents(force_reingest)
 
 
@@ -412,7 +418,7 @@ if __name__ == "__main__":
 
         try:
             # Initialize pipeline
-            pipeline = IngestionPipeline(manifest_path)
+            pipeline = IngestionPipeline(manifest_path, qdrant_path="./qdrant_local_storage")
 
             # Show what documents are available
             status = pipeline.get_ingestion_status()

@@ -87,12 +87,15 @@ def demo_retriever():
     """Demo the retriever functionality."""
     print("=== RETRIEVER DEMO ===")
 
-    # Create retriever (will use dummy mode if Qdrant not available)
-    print("Creating retriever...")
-    retriever = VersionAwareRetriever()
+    # Create retriever with local storage (will create storage directory if needed)
+    print("Creating retriever with local storage...")
+    retriever = VersionAwareRetriever(
+        collection_name="version_aware_rag",
+        qdrant_path="./qdrant_local_storage"  # Use local storage
+    )
 
-    # Test search (will return empty results if Qdrant not available)
-    print("\\nTesting search...")
+    # Test search (will return empty results if no data indexed yet)
+    print("\nTesting search...")
     results = retriever.search(
         query_text="password policy requirements",
         limit=5
@@ -100,7 +103,7 @@ def demo_retriever():
     print(f"Search for 'password policy requirements': {len(results)} results")
 
     # Test as-of search
-    print("\\nTesting as-of search...")
+    print("\nTesting as-of search...")
     results = retriever.search(
         query_text="password policy",
         limit=5,
@@ -110,7 +113,7 @@ def demo_retriever():
     print(f"As-of search (2025-06-01) for 'password policy': {len(results)} results")
 
     # Test explicit version search
-    print("\\nTesting explicit version search...")
+    print("\nTesting explicit version search...")
     results = retriever.search(
         query_text="password policy",
         limit=5,
@@ -121,7 +124,7 @@ def demo_retriever():
     print(f"Explicit version search (v2.0) for 'password policy': {len(results)} results")
 
     # Test compare search
-    print("\\nTesting compare search...")
+    print("\nTesting compare search...")
     results = retriever.search(
         query_text="password policy",
         limit=5,
@@ -132,7 +135,7 @@ def demo_retriever():
     print(f"Compare search (v1.0 vs v3.0) for 'password policy': {len(results)} results")
 
     # Test auto-detection
-    print("\\nTesting auto-detection...")
+    print("\nTesting auto-detection...")
     test_queries = [
         "What is the current password policy?",
         "What was the password policy as of 2025-06-01?",
@@ -154,11 +157,12 @@ def demo_convenience_functions():
     """Demo convenience functions."""
     print("=== CONVENIENCE FUNCTIONS DEMO ===")
 
-    # Test the convenience search function
+    # Test the convenience search function with local storage
     print("Testing convenience search function...")
     results = search_documents(
         query_text="incident response procedures",
-        limit=3
+        limit=3,
+        qdrant_path="./qdrant_local_storage"  # Use local storage
     )
     print(f"Convenience search for 'incident response procedures': {len(results)} results")
 
@@ -180,10 +184,9 @@ def main():
         print("=" * 50)
         print("Retrieval demo completed successfully!")
         print("\nNext steps:")
-        print("1. Set up Qdrant vector database (if not already done)")
-        print("2. Run ingestion pipeline to populate the vector store")
-        print("3. Test retrieval with actual embedded documents")
-        print("4. Proceed to Phase 4: Versioned answer generation")
+        print("1. Run ingestion pipeline to populate the local vector store")
+        print("2. Test retrieval with actual embedded documents")
+        print("3. Proceed to Phase 4: Versioned answer generation")
 
     except Exception as e:
         print(f"\nError during demo: {e}")
