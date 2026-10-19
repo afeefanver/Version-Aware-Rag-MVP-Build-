@@ -9,6 +9,9 @@ try:
     from generation.prompt_template import PromptTemplate
 except ImportError:
     # When run directly from generation directory
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent))
     from generator import Generator, AnswerFormat
     from prompt_template import PromptTemplate
 
@@ -160,19 +163,19 @@ def end_to_end_demo():
             print(f"   Error: {e}")
 
     print("\n" + "=" * 60)
-    print("✅ End-to-End Demo Complete!")
+    print("End-to-End Demo Complete!")
     print("\nWhat This Demonstrates:")
     print("   > Retrieval phase finds relevant policy chunks with version metadata")
     print("   > Generation phase creates contextual answers with version attribution")
     print("   > Multiple output formats available (narrative, bullet points, etc.)")
     print("   > Confidence scoring based on retrieval quality")
     print("   > Proper version handling for temporal queries")
-    print("\n🔗 To Run the Actual System:")
+    print("\nTo Run the Actual System:")
     print("   1. Fix Qdrant storage access (resolve lock issue)")
     print("   2. Run ingestion: python run_ingestion.py")
     print("   3. Test retrieval: python test_search.py")
     print("   4. Test generation: python generation/demo.py")
-    print("   5. End-to-end: Use retriever → generator pipeline")
+    print("   5. End-to-end: Use retriever -> generator pipeline")
 
 
 if __name__ == "__main__":
