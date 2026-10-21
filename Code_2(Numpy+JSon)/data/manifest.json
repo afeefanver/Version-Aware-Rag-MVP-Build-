@@ -1,0 +1,104 @@
+{
+  "documents": [
+    {
+      "doc_id": "password-policy",
+      "versions": [
+        {
+          "version": "v1.0",
+          "effective_from": "2025-01-01",
+          "effective_to": "2025-06-30",
+          "status": "superseded",
+          "source_path": "policies/password-policy_v1.0.md",
+          "supersedes": null
+        },
+        {
+          "version": "v2.0",
+          "effective_from": "2025-07-01",
+          "effective_to": "2025-12-31",
+          "status": "superseded",
+          "source_path": "policies/password-policy_v2.0.md",
+          "supersedes": "v1.0"
+        },
+        {
+          "version": "v3.0",
+          "effective_from": "2026-01-01",
+          "effective_to": null,
+          "status": "current",
+          "source_path": "policies/password-policy_v3.0.md",
+          "supersedes": "v2.0"
+        }
+      ]
+    },
+    {
+      "doc_id": "incident-response",
+      "versions": [
+        {
+          "version": "v1.1",
+          "effective_from": "2025-03-15",
+          "effective_to": "2025-09-14",
+          "status": "superseded",
+          "source_path": "policies/incident-response_v1.1.md",
+          "supersedes": null
+        },
+        {
+          "version": "v2.0",
+          "effective_from": "2025-09-15",
+          "effective_to": "2026-02-28",
+          "status": "superseded",
+          "source_path": "policies/incident-response_v2.0.md",
+          "supersedes": "v1.1"
+        },
+        {
+          "version": "v2.1",
+          "effective_from": "2026-03-01",
+          "effective_to": null,
+          "status": "current",
+          "source_path": "policies/incident-response_v2.1.md",
+          "supersedes": "v2.0"
+        }
+      ]
+    },
+    {
+      "doc_id": "data-classification",
+      "versions": [
+        {
+          "version": "v1.0",
+          "effective_from": "2025-01-01",
+          "effective_to": "2025-08-31",
+          "status": "superseded",
+          "source_path": "policies/data-classification_v1.0.md",
+          "supersedes": null
+        },
+        {
+          "version": "v2.0",
+          "effective_from": "2025-09-01",
+          "effective_to": null,
+          "status": "current",
+          "source_path": "policies/data-classification_v2.0.md",
+          "supersedes": "v1.0"
+        }
+      ]
+    },
+    {
+      "doc_id": "acceptable-use",
+      "versions": [
+        {
+          "version": "v1.2",
+          "effective_from": "2025-02-01",
+          "effective_to": "2025-11-30",
+          "status": "superseded",
+          "source_path": "policies/acceptable-use_v1.2.md",
+          "supersedes": null
+        },
+        {
+          "version": "v2.0",
+          "effective_from": "2025-12-01",
+          "effective_to": null,
+          "status": "current",
+          "source_path": "policies/acceptable-use_v2.0.md",
+          "supersedes": "v1.2"
+        }
+      ]
+    }
+  ]
+}
