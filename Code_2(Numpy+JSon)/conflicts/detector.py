@@ -103,7 +103,8 @@ _EVERY_RE = re.compile(
 # Deadline phrasings, e.g. "- Initial triage within 15 minutes of report".
 _WITHIN_RE = re.compile(
     r"^\s*[-*]?\s*(?P<label>[A-Za-z][^:\-]{2,60}?)\s+within\s+"
-    r"(?P<num>\d[\d,]*)\s*(?P<unit>[a-zA-Z]+(?:\s[a-zA-Z]+)?)\b",
+    r"(?P<num>\d[\d,]*)\s*(?P<unit>minutes?|hours?|days?|weeks?|months?|years?"
+    r"|\s?business\s+days?)\b",
     re.I,
 )
 
@@ -119,9 +120,9 @@ def _normalize_topic(label: str) -> str:
 def _normalize_value(num: str, unit: Optional[str]) -> str:
     """Normalize a value: '1,000 Words' -> '1000 words'; bare '5' stays '5'."""
     num = num.replace(",", "")
-    if not unit or unit.lower() in _NOT_UNITS:
+    if not unit or unit.lower().strip() in _NOT_UNITS:
         return num
-    return f"{num} {unit.lower()}"
+    return f"{num} {unit.lower().strip()}"
 
 
 def _extract_from_line(line: str) -> Optional[Tuple[str, str]]:
