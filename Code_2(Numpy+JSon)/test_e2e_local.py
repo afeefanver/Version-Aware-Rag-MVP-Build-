@@ -16,6 +16,7 @@ import sys
 from retrieval.local_retriever import VersionAwareLocalRetriever
 from generation.generator import Generator
 from generation.prompt_template import AnswerFormat
+from conflicts import analyze_results
 
 
 def run_e2e():
