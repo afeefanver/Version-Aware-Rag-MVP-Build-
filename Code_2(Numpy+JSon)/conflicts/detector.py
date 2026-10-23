@@ -81,11 +81,11 @@ _LABELED_FACT_RE = re.compile(
     r"(?:\s*\([^)]*\))?\s*$"
 )
 
-# First "number unit" (or bare number) inside a value string. The unit
-# must be a plausible measure word - this keeps "ext. 5555, or ticketing"
-# from becoming value "5555 or" (or/and/via are not units).
+# First "number unit" (or bare number) inside a value string. The unit is
+# a single word - this keeps "ext. 5555, or ticketing" from becoming
+# "5555 or" (or/and/via are not units and are dropped in normalization).
 _NUMBER_UNIT_RE = re.compile(
-    r"(?P<num>\d[\d,]*(?:\.\d+)?)\s*(?P<unit>(?:[a-zA-Z%]+(?:\s+[a-zA-Z]+)?)?)"
+    r"(?P<num>\d+(?:,\d{3})*(?:\.\d+)?)\s*(?P<unit>[a-zA-Z%]+)?"
 )
 
 # Words that never continue a unit.
