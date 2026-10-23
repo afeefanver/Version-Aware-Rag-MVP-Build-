@@ -81,8 +81,16 @@ _LABELED_FACT_RE = re.compile(
     r"(?:\s*\([^)]*\))?\s*$"
 )
 
-# First "number unit" (or bare number) inside a value string.
-_NUMBER_UNIT_RE = re.compile(r"(?P<num>\d[\d,]*(?:\.\d+)?)\s*(?P<unit>[a-zA-Z%]+)?")
+# First "number unit" (or bare number) inside a value string. The unit
+# must be a plausible measure word - this keeps "ext. 5555, or ticketing"
+# from becoming value "5555 or" (or/and/via are not units).
+_NUMBER_UNIT_RE = re.compile(
+    r"(?P<num>\d[\d,]*(?:\.\d+)?)\s*(?P<unit>(?:[a-zA-Z%]+(?:\s+[a-zA-Z]+)?)?)"
+)
+
+# Words that never continue a unit.
+_NOT_UNITS = {"or", "and", "of", "to", "the", "a", "an", "in", "on", "at",
+              "is", "are", "if", "with", "for"}
 
 # Recurring-interval phrasings without a colon label, e.g.
 # "- Passwords must be changed every 90 days" / "- Internal updates every 4 hours".
@@ -111,7 +119,9 @@ def _normalize_topic(label: str) -> str:
 def _normalize_value(num: str, unit: Optional[str]) -> str:
     """Normalize a value: '1,000 Words' -> '1000 words'; bare '5' stays '5'."""
     num = num.replace(",", "")
-    return f"{num} {unit.lower()}" if unit else num
+    if not unit or unit.lower() in _NOT_UNITS:
+        return num
+    return f"{num} {unit.lower()}"
 
 
 def _extract_from_line(line: str) -> Optional[Tuple[str, str]]:
@@ -214,6 +224,11 @@ def detect_conflicts(search_results: List[Dict[str, Any]]) -> List[Conflict]:
             )
         if len(sources_per_value) < 2:
             continue  # unanimous value (or only one value present)
+
+        # Disagreement inside a single source (doc_id + version) is
+        # extraction noise, not a version conflict.
+        if len({(c.doc_id, c.version) for c in claims}) == 1:
+            continue
 
         doc_ids = {c.doc_id for c in claims}
         conflicts.append(Conflict(
