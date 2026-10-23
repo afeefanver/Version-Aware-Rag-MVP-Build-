@@ -73,6 +73,13 @@ def run_e2e():
             print(f"    score {r['score']:.3f} | {r['metadata'].get('doc_id')} "
                   f"{r['metadata'].get('version')} | {r['text'][:60]}...")
 
+        # Step 1b: conflict analysis over the retrieved chunks
+        effective_mode = mode or 'default'
+        report = analyze_results(results, query_mode=effective_mode)
+        if report.has_conflicts():
+            print(f"  Conflicts: {report.conflict_count} "
+                  f"({report.needs_review_count} need review)")
+
         # Step 2: real generation from those results
         answer = generator.generate_answer(
             question=question,
@@ -83,6 +90,10 @@ def run_e2e():
               f"{len(answer.sources)} sources):")
         for line in answer.answer.splitlines():
             print(f"    {line}")
+
+        # Step 3: conflict notes shown under the answer
+        for note in report.format_notes():
+            print(f"  >> {note}")
 
         # Version attribution check (dict of doc_id -> version string)
         if answer.version_attribution:
